@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>بوابة نتائج جامعة الأزهر</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin: 0; padding: 0; }
+        
+        /* الواجهة الأولى: خلفية الجامعة */
+        #searchBox { 
+            background: url('https://i.ibb.co/L9yR1rN/1000554133.jpg') no-repeat center center fixed; 
+            background-size: cover; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+        }
+        .search-card { background: rgba(255, 255, 255, 0.9); padding: 25px; border-radius: 12px; width: 85%; max-width: 400px; }
+        
+        /* الواجهة الثانية: بيضاء واللوجو فوق الاسم */
+        #resultBox { display: none; background: white; min-height: 100vh; padding: 20px; }
+        .logo { width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
+        
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; text-align: center; }
+        button { padding: 12px 30px; background: #0f5132; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #f8f8f8; }
+    </style>
+</head>
+<body>
+
+    <div id="searchBox">
+        <div class="search-card">
+            <h2>استعلام النتيجة</h2>
+            <input type="number" id="seatInput" placeholder="رقم الجلوس">
+            <input type="number" id="idInput" placeholder="الرقم القومي">
+            <button onclick="checkResult()">عرض النتيجة</button>
+            <p id="errorMsg" style="color:red; display:none;">بيانات خاطئة</p>
+        </div>
+    </div>
+
+    <div id="resultBox">
+        <img src="https://i.ibb.co/Lh27T1S/1000554132.jpg" class="logo" alt="لوجو الجامعة">
+        <h3>عبد الرحمن مصطفى محمود حنفي السيوفي</h3>
+        <table>
+            <tr><th>المادة</th><th>الدرجة</th><th>التقدير</th></tr>
+            <tr><td>فقه</td><td>70</td><td>جيد</td></tr>
+            <tr><td>أصول فقه</td><td>60</td><td>مقبول</td></tr>
+            <tr><td>تاريخ التشريع</td><td>65</td><td>جيد</td></tr>
+            <tr><td>تفسير آيات الأحكام</td><td>70</td><td>جيد</td></tr>
+            <tr><td>علوم الحديث</td><td>80</td><td>جيد جداً</td></tr>
+            <tr><td>توحيد</td><td>70</td><td>جيد</td></tr>
+            <tr><td>قضايا فقهية معاصرة</td><td>65</td><td>جيد</td></tr>
+            <tr><td>فقه مقارن</td><td>60</td><td>مقبول</td></tr>
+            <tr><td>لغة عربية</td><td>90</td><td>امتياز</td></tr>
+            <tr><td>قرآن كريم</td><td>50</td><td>امتياز</td></tr>
+            <tr><td>لغة إنجليزية</td><td>47</td><td>امتياز</td></tr>
+        </table>
+        <p><strong>التقدير العام:</strong> جيد جداً</p>
+    </div>
+
+    <script>
+        function checkResult() {
+            if (document.getElementById("seatInput").value == "52157" && document.getElementById("idInput").value == "30606030103351") {
+                document.getElementById("searchBox").style.display = "none";
+                document.getElementById("resultBox").style.display = "block";
+            } else {
+                document.getElementById("errorMsg").style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>
