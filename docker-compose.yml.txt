@@ -1,0 +1,41 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WAHA_URL: http://waha:3000
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data
+    depends_on:
+      - waha
+
+  waha:
+    image: devlikeapro/waha
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WHATSAPP_START_SESSION: default
+      WHATSAPP_RESTART_ALL_SESSIONS: "True"
+    volumes:
+      - ./waha-sessions:/app/.sessions
+    ports:
+      - "127.0.0.1:3001:3000"   # مقفول من برّه، بتفتحه بـ SSH tunnel بس عشان QR
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
