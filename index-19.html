@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>أرقام المرضي من الماسنجر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF2F1; --paper:#FBFCFB; --ink:#0F2A2E; --muted:#4F6770; --line:#D3DEDC;
+  --teal:#0B6E6A; --teal-soft:#DCEFEC; --coral:#B83A26; --coral-soft:#F8E3DE;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1C1F; --paper:#14272B; --ink:#E6F0EE; --muted:#9AB3B8; --line:#25403F;
+    --teal:#5CC4BC; --teal-soft:#173A3A; --coral:#F08A76; --coral-soft:#3A201C;
+    color-scheme: dark;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:400 16px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--teal); outline-offset:2px; border-radius:6px}
+.wrap{max-width:980px; margin:0 auto; padding:20px 16px 80px}
+
+/* العنوان */
+.top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:18px}
+h1{font-size:1.5rem; font-weight:600; margin:0 0 2px; letter-spacing:0}
+.sub{margin:0; color:var(--muted); font-size:.9rem}
+.live{display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); white-space:nowrap; padding-top:6px}
+.dot{width:10px; height:10px; border-radius:50%; background:var(--teal)}
+.live[data-state="off"] .dot{background:var(--coral)}
+@media (prefers-reduced-motion: no-preference){
+  .live[data-state="on"] .dot{animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--teal) 55%,transparent)}70%,100%{box-shadow:0 0 0 9px transparent}}
+}
+
+/* الملخص */
+.summary{display:flex; border:1px solid var(--line); background:var(--paper); border-radius:12px; margin-bottom:14px}
+.fig{flex:1; padding:12px 16px}
+.fig + .fig{border-inline-start:1px solid var(--line)}
+.fig b{display:block; font-size:1.6rem; font-weight:600; line-height:1.2; font-variant-numeric:tabular-nums}
+.fig span{font-size:.85rem; color:var(--muted)}
+.fig.warn b{color:var(--coral)}
+
+/* الأدوات */
+.toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px}
+.toolbar input[type=search], .toolbar select{
+  background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:9px 12px; min-height:44px;
+}
+.toolbar input[type=search]{flex:1 1 200px}
+.chips{display:flex; gap:6px}
+.chip{
+  background:transparent; border:1px solid var(--line); border-radius:999px; padding:0 14px; min-height:44px; cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.export{
+  display:inline-flex; align-items:center; min-height:44px; padding:0 14px; border-radius:10px;
+  border:1px solid var(--line); background:var(--paper); color:var(--ink); text-decoration:none;
+}
+
+/* القائمة */
+#list{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.lead{
+  background:var(--paper); border:1px solid var(--line); border-inline-start:6px solid var(--teal);
+  border-radius:12px; padding:12px 14px;
+  display:grid; grid-template-columns:1fr auto 150px auto; gap:8px 14px; align-items:center;
+}
+.lead[data-status="failed"]{border-inline-start-color:var(--coral)}
+.lead[data-status="pending"]{border-inline-start-color:var(--muted)}
+.who strong{display:block; font-weight:600}
+.who span{font-size:.88rem; color:var(--muted)}
+.phone{
+  background:transparent; border:1px dashed var(--line); border-radius:10px; padding:4px 12px; min-height:44px; cursor:pointer;
+  font-size:1.35rem; font-weight:600; letter-spacing:.03em; font-variant-numeric:tabular-nums; direction:ltr;
+}
+.phone:hover{background:var(--teal-soft); border-color:var(--teal)}
+.meta{font-size:.85rem; color:var(--muted); line-height:1.4}
+.state{display:block; font-weight:500; color:var(--teal)}
+.lead[data-status="failed"] .state{color:var(--coral)}
+.actions{display:flex; gap:6px}
+.btn{
+  min-height:44px; padding:0 14px; border-radius:10px; border:1px solid var(--line); background:transparent;
+  cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; color:var(--ink); font-size:.92rem;
+}
+.btn:hover{background:var(--teal-soft)}
+.btn.primary{background:var(--coral); border-color:var(--coral); color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.55; cursor:wait}
+.msg{grid-column:1/-1; margin:0; font-size:.88rem; color:var(--muted); border-top:1px solid var(--line); padding-top:8px;
+     overflow-wrap:anywhere}
+.err{grid-column:1/-1; margin:0; font-size:.85rem; color:var(--coral); direction:ltr; text-align:left; overflow-wrap:anywhere}
+
+.empty{padding:40px 16px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:12px}
+.empty b{display:block; color:var(--ink); font-size:1.05rem; margin-bottom:4px}
+
+/* التجربة */
+.lab{margin-top:22px; background:var(--paper); border:1px solid var(--line); border-radius:12px}
+.lab summary{padding:14px 16px; cursor:pointer; font-weight:500; min-height:44px}
+.lab .body{padding:0 16px 16px; display:grid; gap:10px}
+.lab textarea,.lab input{width:100%; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+.lab textarea{min-height:90px; resize:vertical}
+.lab .row{display:flex; gap:8px; flex-wrap:wrap}
+#labOut{margin:0; font-size:.95rem}
+#labOut .found{direction:ltr; display:inline-block; font-weight:600; margin-inline-end:10px}
+
+#toast{
+  position:fixed; inset-inline:0; bottom:20px; margin:auto; width:max-content; max-width:90vw;
+  background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:10px; font-size:.95rem;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+#toast.show{opacity:1}
+
+@media (max-width:720px){
+  .lead{grid-template-columns:1fr; }
+  .phone{justify-self:start}
+  .summary .fig{padding:10px 12px}
+  .fig b{font-size:1.35rem}
+}
+
+/* التبويبات والإعدادات */
+.tabs{display:flex; gap:6px; margin-bottom:16px}
+.panel{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; display:grid; gap:10px}
+.panel h2{font-size:1.15rem; font-weight:600; margin:0}
+.hint{margin:0; color:var(--muted); font-size:.92rem}
+.panel select,.panel textarea{width:100%; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; min-height:44px}
+.panel textarea{min-height:80px; resize:vertical; direction:ltr; text-align:left}
+.row{display:flex; gap:8px; flex-wrap:wrap}
+.wa-state{display:flex; align-items:center; gap:8px; font-weight:500}
+.wa-state .dot{width:10px; height:10px}
+.wa-state[data-ok="false"] .dot{background:var(--coral)}
+#qrBox{text-align:center}
+#qrBox img{width:230px; max-width:100%; background:#fff; padding:8px; border-radius:10px}
+.pages{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.pg{display:flex; align-items:center; gap:10px; flex-wrap:wrap; border:1px solid var(--line); border-radius:10px; padding:8px 12px}
+.pg .nm{flex:1 1 160px}
+.pg .nm strong{display:block; font-weight:600}
+.pg .nm span{font-size:.82rem; color:var(--muted); direction:ltr; display:inline-block}
+.pg label{display:flex; align-items:center; gap:6px; min-height:44px; cursor:pointer}
+.pg input[type=checkbox], .cand input[type=checkbox]{width:22px; height:22px; accent-color:var(--teal)}
+.cand{display:grid; gap:6px}
+.cand label{display:flex; align-items:center; gap:10px; min-height:44px; padding:0 10px; border:1px solid var(--line); border-radius:10px; cursor:pointer}
+.note{margin:0; font-size:.9rem}
+.note.ok{color:var(--teal)} .note.bad{color:var(--coral)}
+ol.how{margin:0; padding-inline-start:20px; color:var(--muted); font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>أرقام المرضي من الماسنجر</h1>
+      <p class="sub" id="sync">بيحمّل...</p>
+    </div>
+    <div class="live" id="live" data-state="on"><span class="dot"></span><span id="liveText">شغال</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="chip" data-tab="leads" aria-pressed="true">الأرقام</button>
+    <button class="chip" data-tab="settings" aria-pressed="false">الإعدادات</button>
+  </nav>
+
+  <div id="viewLeads">
+  <section class="summary" aria-label="ملخص">
+    <div class="fig"><b id="fToday">0</b><span>رقم النهاردة</span></div>
+    <div class="fig"><b id="fTotal">0</b><span>إجمالي الأرقام</span></div>
+    <div class="fig warn"><b id="fFailed">0</b><span>محتاجة إعادة إرسال</span></div>
+  </section>
+
+  <section class="toolbar" aria-label="بحث وفلترة">
+    <input type="search" id="q" placeholder="ابحث بالاسم أو الرقم" aria-label="بحث">
+    <select id="clinic" aria-label="العيادة"><option value="">كل العيادات</option></select>
+    <div class="chips" role="group" aria-label="الحالة">
+      <button class="chip" data-f="all" aria-pressed="true">الكل</button>
+      <button class="chip" data-f="sent" aria-pressed="false">اتبعت</button>
+      <button class="chip" data-f="failed" aria-pressed="false">فشل</button>
+    </div>
+    <a class="export" href="/api/export.csv">تنزيل Excel</a>
+  </section>
+
+  <main>
+    <ul id="list"></ul>
+    <div class="empty" id="empty" hidden></div>
+  </main>
+
+  <details class="lab">
+    <summary>جرّب استخراج الرقم من رسالة</summary>
+    <div class="body">
+      <textarea id="labText" placeholder="الصق رسالة مريض هنا، مثلًا: عايز أحجز، رقمي ٠١٠١٢٣٤٥٦٧٨"></textarea>
+      <div class="row">
+        <input id="labClinic" placeholder="اسم العيادة (للإرسال)" style="flex:1 1 180px">
+        <input id="labName" placeholder="اسم المريض (للإرسال)" style="flex:1 1 180px">
+      </div>
+      <div class="row">
+        <button class="btn" id="labPreview">اعرض الأرقام</button>
+        <button class="btn primary" id="labSend">ابعت للجروب</button>
+      </div>
+      <p id="labOut" aria-live="polite"></p>
+    </div>
+  </details>
+  </div>
+
+  <div id="viewSettings" hidden>
+    <section class="panel">
+      <h2>جروب الواتساب</h2>
+      <div class="wa-state" id="waLine" data-ok="false"><span class="dot"></span><span id="waState">بيفحص...</span></div>
+      <div id="qrBox" hidden>
+        <img id="qrImg" alt="QR لربط واتساب">
+        <p class="hint">افتح واتساب في تليفون الرقم المخصص، ثم الأجهزة المرتبطة، ثم ربط جهاز، وامسح الكود.</p>
+      </div>
+      <div id="pairBox" hidden>
+        <p class="hint">اكتب رقم الواتساب المخصص (بالكود الدولي أو 01...) واضغط الزرار، هيطلعلك كود. افتح واتساب، ثم الأجهزة المرتبطة، ثم ربط جهاز، ثم "ربط برقم الهاتف بدلًا من ذلك"، واكتب الكود.</p>
+        <input id="pairPhone" inputmode="tel" dir="ltr" placeholder="201012345678" aria-label="رقم الواتساب" style="width:100%; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; min-height:44px">
+        <div class="row" style="margin-top:8px"><button class="btn primary" id="pairBtn">هات كود الربط</button></div>
+        <p id="pairCode" dir="ltr" style="font-size:1.8rem; font-weight:600; letter-spacing:.08em; margin:8px 0 0; text-align:center"></p>
+      </div>
+      <div class="row"><button class="btn primary" id="waConnect" hidden>اربط واتساب</button></div>
+      <select id="groupSel" aria-label="الجروب"><option value="">حمّل الجروبات الأول</option></select>
+      <div class="row">
+        <button class="btn" id="groupLoad">حمّل الجروبات</button>
+        <button class="btn primary" id="groupSave">احفظ الجروب</button>
+        <button class="btn" id="groupTest">ابعت رسالة تجربة</button>
+      </div>
+      <p class="note" id="groupMsg" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <h2>صفحات الماسنجر</h2>
+      <p class="hint">الأرقام بتتاخد من الصفحات المفعّلة هنا بس.</p>
+      <ul class="pages" id="pageList"></ul>
+      <details>
+        <summary style="cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:500">ضيف أو غيّر الصفحات</summary>
+        <div style="display:grid; gap:10px; padding-top:6px">
+          <ol class="how">
+            <li>افتح Graph API Explorer من Meta for Developers واختار تطبيقك.</li>
+            <li>اطلب الصلاحيات: pages_show_list وpages_messaging وpages_manage_metadata وpages_read_engagement.</li>
+            <li>اضغط Generate Access Token وانسخ التوكن والصقه هنا.</li>
+          </ol>
+          <textarea id="fbToken" placeholder="الصق التوكن هنا" aria-label="توكن فيسبوك"></textarea>
+          <div class="row"><button class="btn" id="fbLoad">هات صفحاتي</button></div>
+          <div class="cand" id="cand"></div>
+          <div class="row"><button class="btn primary" id="fbApply" hidden>فعّل الصفحات المحددة</button></div>
+          <p class="note" id="fbMsg" aria-live="polite"></p>
+        </div>
+      </details>
+    </section>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let leads = [];
+let filter = 'all';
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtPhone = (p) => /^0\d{10}$/.test(p) ? p.replace(/^(\d{4})(\d{3})(\d{4})$/, '$1 $2 $3') : p;
+const nf = new Intl.NumberFormat('ar-EG');
+
+function ago(iso){
+  const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return 'دلوقتي';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m === 1 ? 'من دقيقة' : m <= 10 ? `من ${nf.format(m)} دقايق` : `من ${nf.format(m)} دقيقة`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return h === 1 ? 'من ساعة' : h <= 10 ? `من ${nf.format(h)} ساعات` : `من ${nf.format(h)} ساعة`;
+  return new Date(iso).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' });
+}
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.id); toast.id = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function api(url, opts){
+  const r = await fetch(url, opts);
+  let j = null;
+  try { j = await r.json(); } catch {}
+  if (!r.ok) throw new Error((j && j.error) || r.status);
+  return j;
+}
+const post = (url, body) => api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+
+async function load(){
+  try{
+    const data = await api('/api/leads');
+    leads = data.leads;
+    setLive(true);
+    $('#sync').textContent = data.groupConfigured
+      ? 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+      : 'لسه ما اخترتش جروب الواتساب، افتح الإعدادات';
+    if (!load.first){ load.first = true; if (!data.groupConfigured || !data.pagesCount) showTab('settings'); }
+    fillClinics();
+    render();
+  }catch{
+    setLive(false);
+  }
+}
+
+function setLive(on){
+  $('#live').dataset.state = on ? 'on' : 'off';
+  $('#liveText').textContent = on ? 'شغال' : 'مفيش اتصال بالسيرفر';
+}
+
+function fillClinics(){
+  const sel = $('#clinic'), cur = sel.value;
+  const names = [...new Set(leads.map((l) => l.clinic))].sort();
+  sel.innerHTML = '<option value="">كل العيادات</option>' + names.map((n) => `<option>${esc(n)}</option>`).join('');
+  sel.value = names.includes(cur) ? cur : '';
+}
+
+function render(){
+  const today = new Date().toDateString();
+  $('#fToday').textContent = nf.format(leads.filter((l) => new Date(l.createdAt).toDateString() === today).length);
+  $('#fTotal').textContent = nf.format(leads.length);
+  $('#fFailed').textContent = nf.format(leads.filter((l) => l.status === 'failed').length);
+
+  const q = $('#q').value.trim().toLowerCase();
+  const clinic = $('#clinic').value;
+  const rows = leads.filter((l) =>
+    (filter === 'all' || l.status === filter) &&
+    (!clinic || l.clinic === clinic) &&
+    (!q || (l.name + l.phone + l.clinic).toLowerCase().includes(q))
+  );
+
+  $('#list').innerHTML = rows.map((l) => `
+    <li class="lead" data-status="${esc(l.status)}">
+      <div class="who"><strong>${esc(l.name)}</strong><span>${esc(l.clinic)}</span></div>
+      <button class="phone" data-copy="${esc(l.phone)}" aria-label="انسخ الرقم ${esc(l.phone)}">${esc(fmtPhone(l.phone))}</button>
+      <div class="meta">
+        <span class="state">${l.status === 'sent' ? 'اتبعت للجروب' : l.status === 'failed' ? 'فشل الإرسال' : 'بيتبعت...'}</span>
+        ${esc(ago(l.createdAt))}
+      </div>
+      <div class="actions">
+        <a class="btn" href="${esc(l.wa)}" target="_blank" rel="noopener">واتساب</a>
+        <button class="btn ${l.status === 'failed' ? 'primary' : ''}" data-resend="${esc(l.id)}">${l.status === 'failed' ? 'جرّب تاني' : 'ابعت تاني'}</button>
+      </div>
+      ${l.status === 'failed' && l.error ? `<p class="err">${esc(l.error)}</p>` : ''}
+      ${l.message ? `<p class="msg">${esc(l.message)}</p>` : ''}
+    </li>`).join('');
+
+  const empty = $('#empty');
+  empty.hidden = rows.length > 0;
+  empty.innerHTML = leads.length
+    ? '<b>مفيش نتايج</b>غيّر البحث أو الفلتر'
+    : '<b>لسه مفيش أرقام</b>أول ما مريض يبعت رقمه على الماسنجر هيظهر هنا ويتبعت للجروب';
+}
+
+document.addEventListener('click', async (e) => {
+  const copy = e.target.closest('[data-copy]');
+  if (copy){
+    try { await navigator.clipboard.writeText(copy.dataset.copy); toast('اتنسخ الرقم'); }
+    catch { toast('مقدرتش أنسخ، اضغط مطوّلًا على الرقم'); }
+    return;
+  }
+  const re = e.target.closest('[data-resend]');
+  if (re){
+    re.disabled = true;
+    try{
+      const l = await api(`/api/leads/${re.dataset.resend}/resend`, { method: 'POST' });
+      toast(l.status === 'sent' ? 'اتبعت للجروب' : 'فشل الإرسال تاني');
+    }catch{ toast('حصلت مشكلة في الاتصال'); }
+    load();
+    return;
+  }
+  const tab = e.target.closest('[data-tab]');
+  if (tab){ showTab(tab.dataset.tab); return; }
+  const chip = e.target.closest('.chip[data-f]');
+  if (chip){
+    filter = chip.dataset.f;
+    document.querySelectorAll('.chip[data-f]').forEach((c) => c.setAttribute('aria-pressed', c === chip));
+    render();
+  }
+});
+$('#q').addEventListener('input', render);
+$('#clinic').addEventListener('change', render);
+
+/* تجربة الاستخراج */
+async function lab(send){
+  const text = $('#labText').value.trim();
+  if (!text) return toast('اكتب رسالة الأول');
+  const out = $('#labOut');
+  try{
+    const r = await api('/api/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, send, clinic: $('#labClinic').value || 'تجربة', name: $('#labName').value || 'مريض تجريبي' }),
+    });
+    if (!r.phones.length){
+      out.textContent = send ? 'مفيش رقم جديد اتبعت (يمكن مفيش رقم، أو الرقم متسجل قبل كده).' : 'مفيش رقم في الرسالة دي.';
+    } else {
+      out.innerHTML = r.phones.map((p) => `<span class="found">${esc(p)}</span>`).join('') + (send ? 'اتبعت للجروب' : '');
+    }
+    if (send) load();
+  }catch{ out.textContent = 'حصلت مشكلة في الاتصال بالسيرفر.'; }
+}
+$('#labPreview').onclick = () => lab(false);
+$('#labSend').onclick = () => lab(true);
+
+/* ---------- الإعدادات ---------- */
+let tab = 'leads', pollT, groupsLoaded = false, curGroup = '';
+
+function showTab(t){
+  tab = t;
+  $('#viewLeads').hidden = t !== 'leads';
+  $('#viewSettings').hidden = t !== 'settings';
+  document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === t));
+  clearTimeout(pollT);
+  if (t === 'settings'){ loadSettings(); pollWa(); }
+}
+
+function pollWa(){
+  clearTimeout(pollT);
+  refreshWa().finally(() => { if (tab === 'settings') pollT = setTimeout(pollWa, 4000); });
+}
+
+const WA_TEXT = {
+  WORKING: 'واتساب متوصل',
+  SCAN_QR_CODE: 'مستني مسح الـ QR',
+  STARTING: 'بيشغّل واتساب...',
+  STOPPED: 'واتساب مش شغال',
+  FAILED: 'واتساب فيه مشكلة، جرّب تربطه تاني',
+  UNREACHABLE: 'مش قادر أوصل لـ WAHA، اتأكد إنه شغال',
+};
+
+async function refreshWa(){
+  let status = 'UNREACHABLE', driver = '';
+  try { const st = await api('/api/waha/status'); status = st.status; driver = st.driver || ''; } catch {}
+  $('#waState').textContent = WA_TEXT[status] || ('الحالة: ' + status);
+  $('#waLine').dataset.ok = status === 'WORKING';
+  $('#qrBox').hidden = !(status === 'SCAN_QR_CODE' && driver !== 'baileys');
+  $('#pairBox').hidden = !(status === 'SCAN_QR_CODE' && driver === 'baileys');
+  $('#waConnect').hidden = !['STOPPED', 'FAILED'].includes(status);
+  if (status === 'SCAN_QR_CODE' && driver !== 'baileys'){
+    try { $('#qrImg').src = (await api('/api/waha/qr')).image; } catch {}
+  }
+  if (status === 'WORKING' && !groupsLoaded) loadGroups();
+}
+
+async function loadGroups(){
+  const msg = $('#groupMsg');
+  msg.className = 'note'; msg.textContent = 'بيحمّل الجروبات...';
+  try{
+    const groups = await api('/api/groups');
+    groupsLoaded = true;
+    const sel = $('#groupSel');
+    sel.innerHTML = '<option value="">اختار الجروب</option>' +
+      groups.map((g) => `<option value="${esc(g.id)}">${esc(g.name || g.id)}</option>`).join('');
+    sel.value = groups.some((g) => g.id === curGroup) ? curGroup : '';
+    msg.textContent = groups.length ? '' : 'مفيش جروبات ظاهرة على الرقم ده.';
+  }catch(e){
+    msg.className = 'note bad';
+    msg.textContent = 'مقدرتش أحمّل الجروبات. اتأكد إن واتساب متوصل. (' + e.message + ')';
+  }
+}
+
+async function loadSettings(){
+  try{
+    const s = await api('/api/settings');
+    curGroup = s.groupId;
+    if (s.groupId && !groupsLoaded){
+      $('#groupSel').innerHTML = `<option value="${esc(s.groupId)}">${esc(s.groupName || s.groupId)}</option>`;
+    }
+    $('#pageList').innerHTML = s.pages.length ? s.pages.map((p) => `
+      <li class="pg" data-id="${esc(p.id)}">
+        <div class="nm"><strong>${esc(p.name)}</strong><span>${esc(p.id)}</span></div>
+        <label><input type="checkbox" data-toggle ${p.enabled ? 'checked' : ''}> مفعّلة</label>
+        <button class="btn" data-backfill>ابعت آخر 20 رقم</button>
+        <button class="btn" data-rename>غيّر الاسم</button>
+        <button class="btn" data-remove>شيل</button>
+      </li>`).join('') : '<li class="hint">لسه ما ضفتش صفحات. افتح "ضيف أو غيّر الصفحات".</li>';
+  }catch{}
+}
+
+$('#waConnect').onclick = async () => { await post('/api/waha/start'); toast('بيشغّل واتساب...'); pollWa(); };
+$('#groupLoad').onclick = loadGroups;
+$('#pairBtn').onclick = async () => {
+  const out = $('#pairCode'); out.textContent = '...';
+  try { out.textContent = (await post('/api/wa/pair', { phone: $('#pairPhone').value })).code; }
+  catch(e){ out.textContent = ''; toast(e.message); }
+};
+
+$('#groupSave').onclick = async () => {
+  const sel = $('#groupSel'), msg = $('#groupMsg');
+  if (!sel.value) return toast('اختار جروب الأول');
+  try{
+    await api('/api/settings/group', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: sel.value, name: sel.selectedOptions[0].textContent }) });
+    curGroup = sel.value;
+    msg.className = 'note ok'; msg.textContent = 'اتحفظ. الأرقام الجاية هتتبعت للجروب ده.';
+    load();
+  }catch(e){ msg.className = 'note bad'; msg.textContent = e.message; }
+};
+
+$('#groupTest').onclick = async () => {
+  const msg = $('#groupMsg');
+  try{ await post('/api/settings/test-group'); msg.className = 'note ok'; msg.textContent = 'اتبعتت رسالة تجربة، شوفها في الجروب.'; }
+  catch(e){ msg.className = 'note bad'; msg.textContent = 'فشلت: ' + e.message; }
+};
+
+$('#pageList').addEventListener('change', async (e) => {
+  if (!e.target.matches('[data-toggle]')) return;
+  const id = e.target.closest('.pg').dataset.id;
+  try{
+    await api(`/api/settings/pages/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: e.target.checked }) });
+    toast(e.target.checked ? 'اتفعّلت الصفحة' : 'اتوقفت الصفحة');
+  }catch(err){ e.target.checked = !e.target.checked; toast(err.message); }
+});
+$('#pageList').addEventListener('click', async (e) => {
+  const li = e.target.closest('.pg'); if (!li) return;
+  const id = li.dataset.id;
+  if (e.target.matches('[data-backfill]')){
+    const btn = e.target; btn.disabled = true; toast('بيجيب الأرقام...');
+    try{
+      const r = await post(`/api/settings/pages/${id}/backfill`, { limit: 20 });
+      toast(r.count ? `لقيت ${r.count} رقم، وبيتبعتوا للجروب واحد واحد` : 'مفيش أرقام في المحادثات الأخيرة');
+      load();
+    }catch(err){ toast(err.message); }
+    btn.disabled = false;
+    return;
+  }
+  if (e.target.matches('[data-rename]')){
+    const name = prompt('الاسم اللي هيظهر في رسالة الجروب:', li.querySelector('strong').textContent);
+    if (name && name.trim()){
+      await api(`/api/settings/pages/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+      loadSettings();
+    }
+  }
+  if (e.target.matches('[data-remove]') && confirm('تشيل الصفحة دي؟')){
+    await api(`/api/settings/pages/${id}`, { method: 'DELETE' });
+    loadSettings();
+  }
+});
+
+$('#fbLoad').onclick = async () => {
+  const msg = $('#fbMsg');
+  msg.className = 'note'; msg.textContent = 'بيجيب الصفحات...';
+  try{
+    const { pages } = await post('/api/fb/pages', { userToken: $('#fbToken').value });
+    $('#fbToken').value = '';
+    $('#cand').innerHTML = pages.map((p) => `<label><input type="checkbox" value="${esc(p.id)}" ${p.selected ? 'checked' : ''}> ${esc(p.name)}</label>`).join('');
+    $('#fbApply').hidden = !pages.length;
+    msg.textContent = pages.length ? 'علّم على الصفحات اللي عايز الأرقام تتاخد منها.' : 'مفيش صفحات على الحساب ده.';
+  }catch(e){ msg.className = 'note bad'; msg.textContent = 'فشل: ' + e.message; }
+};
+
+$('#fbApply').onclick = async () => {
+  const msg = $('#fbMsg');
+  const ids = [...document.querySelectorAll('#cand input:checked')].map((i) => i.value);
+  try{
+    const { results } = await post('/api/settings/pages', { ids });
+    const bad = results.filter((r) => !r.ok);
+    const notes = results.filter((r) => r.ok && r.backfill).map((r) =>
+      r.backfill.error ? `${r.name}: اتفعّلت بس ما قدرتش أجيب الأرقام القديمة (${r.backfill.error})`
+      : r.backfill.note === 'no-group' ? `${r.name}: اختار الجروب الأول وبعدين اضغط "ابعت آخر 20 رقم"`
+      : r.backfill.count ? `${r.name}: لقيت ${r.backfill.count} رقم، وبيتبعتوا للجروب واحد واحد (حوالي دقيقة)` : `${r.name}: مفيش أرقام في المحادثات الأخيرة`);
+    msg.className = 'note ' + (bad.length ? 'bad' : 'ok');
+    msg.textContent = bad.length
+      ? bad.map((b) => `${b.name}: ${b.error}`).join(' | ')
+      : 'اتفعّلت. ' + notes.join(' | ');
+    $('#cand').innerHTML = ''; $('#fbApply').hidden = true;
+    loadSettings(); load();
+  }catch(e){ msg.className = 'note bad'; msg.textContent = 'فشل: ' + e.message; }
+};
+
+load();
+setInterval(load, 15000);
+</script>
+</body>
+</html>
